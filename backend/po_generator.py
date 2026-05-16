@@ -11,6 +11,7 @@ from copy import copy
 from pathlib import Path
 
 from openpyxl import load_workbook
+from openpyxl.worksheet.cell_range import CellRange
 
 from schemas import POPayload
 
@@ -85,11 +86,34 @@ def generate_po(payload: POPayload, output_path: Path) -> None:
     if n_items > TEMPLATE_ITEM_ROWS:
         rows_to_add = n_items - TEMPLATE_ITEM_ROWS
         insert_after = FIRST_ITEM_ROW + TEMPLATE_ITEM_ROWS - 1
-        ws.insert_rows(insert_after + 1, rows_to_add)
+        insert_at = insert_after + 1  # first newly-inserted row number
+
+        # openpyxl 3.x does not always shift merged-cell ranges that fall
+        # entirely *below* the insertion point. Fix them manually before
+        # calling insert_rows so we know the pre-insert coordinates.
+        merged_to_fix = [
+            str(mc) for mc in ws.merged_cells.ranges
+            if mc.min_row >= insert_at
+        ]
+        for ref in merged_to_fix:
+            ws.unmerge_cells(ref)
+
+        ws.insert_rows(insert_at, rows_to_add)
+
+        # Re-add the previously-unmerged ranges, shifted down by rows_to_add
+        for ref in merged_to_fix:
+            cr = CellRange(ref)
+            new_ref = CellRange(
+                min_col=cr.min_col,
+                min_row=cr.min_row + rows_to_add,
+                max_col=cr.max_col,
+                max_row=cr.max_row + rows_to_add,
+            )
+            ws.merge_cells(str(new_ref))
 
         # Copy style from row 14 (style donor) into each new row
         donor_row = FIRST_ITEM_ROW
-        for new_row in range(insert_after + 1, insert_after + 1 + rows_to_add):
+        for new_row in range(insert_at, insert_at + rows_to_add):
             for col_idx in range(1, 12):  # cols A–K
                 src = ws.cell(row=donor_row, column=col_idx)
                 dst = ws.cell(row=new_row, column=col_idx)
