@@ -14,6 +14,7 @@ def peek_next_po_number() -> str:
 
 
 def consume_next_po_number() -> str:
+    peek_next_po_number()  # ensures file exists with seed "30" if missing
     with open(COUNTER_FILE, "r+") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         n = int(f.read().strip())
