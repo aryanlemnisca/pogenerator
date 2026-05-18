@@ -1,4 +1,5 @@
 # backend/gemini_extract.py
+import asyncio
 import os
 from datetime import date, timedelta
 from typing import Optional
@@ -86,9 +87,8 @@ def _flag_float(value: float | None) -> FlaggableFloat:
     return FlaggableFloat(value=None, was_found=False)
 
 
-async def extract_from_pdf(pdf_bytes: bytes) -> POPayload:
+def _call_gemini(pdf_bytes: bytes) -> GeminiExtractionResult:
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=[
@@ -100,7 +100,11 @@ async def extract_from_pdf(pdf_bytes: bytes) -> POPayload:
             response_schema=GeminiExtractionResult,
         ),
     )
-    extracted = GeminiExtractionResult.model_validate_json(response.text)
+    return GeminiExtractionResult.model_validate_json(response.text)
+
+
+async def extract_from_pdf(pdf_bytes: bytes) -> POPayload:
+    extracted = await asyncio.to_thread(_call_gemini, pdf_bytes)
 
     today = date.today()
 
@@ -127,7 +131,7 @@ async def extract_from_pdf(pdf_bytes: bytes) -> POPayload:
     )
 
     meta = POMeta(
-        po_number=FlaggableStr(value=peek_next_po_number(), was_found=False),
+        po_number=FlaggableStr(value=peek_next_po_number(), was_found=True),
         date=FlaggableStr(value=today.strftime("%d %b %Y"), was_found=False),
         payment_terms=FlaggableStr(value="30 days", was_found=False),
         delivery_date=delivery_date,

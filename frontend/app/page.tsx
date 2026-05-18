@@ -32,20 +32,38 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50">
       {stage === "upload" && <UploadStep onExtracted={handleExtracted} />}
       {stage === "review" && payload && (
-        <ReviewForm initialPayload={payload} onGenerated={handleGenerated} />
+        <ReviewForm
+          initialPayload={payload}
+          onGenerated={handleGenerated}
+          onBack={() => setStage("upload")}
+        />
       )}
       {stage === "done" && (
-        <div className="flex flex-col items-center gap-4 py-16">
-          <p className="text-green-700 font-medium text-lg">✓ PO generated!</p>
-          <a href={downloadUrl ?? "#"} download={filename} className="text-sky-600 underline text-sm">
-            Download again: {filename}
-          </a>
-          <button
-            onClick={() => { setStage("upload"); setPayload(null); setDownloadUrl(null); }}
-            className="mt-4 rounded-lg border border-gray-300 px-6 py-2 text-sm hover:bg-gray-100"
-          >
-            Generate another PO
-          </button>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-50 px-4">
+          <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-10 flex flex-col items-center gap-5 max-w-sm w-full">
+            <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center">
+              <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-gray-900">PO Generated!</h2>
+              <p className="mt-1 text-sm text-gray-500">Your file downloaded automatically.</p>
+            </div>
+            <a
+              href={downloadUrl ?? "#"}
+              download={filename}
+              className="w-full text-center rounded-lg border border-sky-300 px-4 py-2 text-sm text-sky-600 hover:bg-sky-50 transition-colors"
+            >
+              Download again
+            </a>
+            <button
+              onClick={() => { setStage("upload"); setPayload(null); setDownloadUrl(null); }}
+              className="w-full rounded-lg bg-sky-500 hover:bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-colors"
+            >
+              Generate another PO
+            </button>
+          </div>
         </div>
       )}
     </main>
