@@ -2,5 +2,9 @@ __pycache__/
 *.pyc
 .env
 backend/data/generated/
+backend/data/po_counter.txt
+backend/po_generator_backend.egg-info/
 .next/
 node_modules/
+.DS_Store
+L.png
